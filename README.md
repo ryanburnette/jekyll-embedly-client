@@ -5,7 +5,8 @@ An [embed.ly][embedly] Liquid tag for Jekyll.
 ## Installation
 
 1. Install the `jekyll_embedly_r` gem or put `embedly.rb` in your `_plugins`
-   directory.
+   directory. Read about [installing a Gem as a Jekyll plugin][jekyll-plugin-gem]
+   if you go the Gem route.
 1. Go to the embed.ly site, register an account and get your API key.
 1. Add your site address to the referrer section e.g. 'localhost.com*'
    or 'www.mywebsite.com*'
@@ -71,3 +72,4 @@ Open an [Issue](https://github.com/ryanburnette/jekyll_embedly_r/issues) or brin
 
 [docs]: http://embed.ly/docs/endpoints/arguments
 [embedly]: http://embed.ly
+[jekyll-plugin-gem]: http://jekyllrb.com/docs/plugins/#installing-a-plugin

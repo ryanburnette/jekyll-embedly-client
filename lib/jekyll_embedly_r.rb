@@ -1,12 +1,13 @@
-require 'rubygems'
-require 'net/https'
-require 'uri'
-require 'json'
-require 'domainatrix'
-require 'compose_url'
+require "net/https"
+require "uri"
+require "json"
+require "domainatrix"
+require "compose_url"
 
 module Jekyll
+
   class Embedly < Liquid::Tag
+
     def initialize(tag_name, text, tokens)
       super
 
@@ -22,8 +23,8 @@ module Jekyll
     end
 
     def render(context)
-      @config  = context.registers[:site].config['embedly']
-      @api_key = @config['api_key']
+      @config  = context.registers[:site].config["embedly"]
+      @api_key = @config["api_key"]
 
       if @api_key.nil?
         raise "You must provide embed.ly api key."
@@ -35,11 +36,20 @@ module Jekyll
     private
 
     def embed(url)
-      params = (@config[Domainatrix.parse(url).domain] || {}).merge @parameters
+      domain = Domainatrix.parse(url).domain
+      params = (@config[domain] || {}).merge @parameters
 
       embedly_url = ComposeURL.new("http://api.embed.ly/1/oembed")
-      embedly_url.add_param('key', @api_key)
-      embedly_url.add_param('url', url)
+
+      if domain == "youtube" && params["rel"] == "0"
+        youtube_url = ComposeURL.new(url)
+        youtube_url.add_param("rel", "0")
+        url = youtube_url.to_s
+        params.delete "rel"
+      end
+
+      embedly_url.add_param("key", @api_key)
+      embedly_url.add_param("url", url)
       params.each do |k, v|
         embedly_url.add_param(k, v)
       end
@@ -48,17 +58,21 @@ module Jekyll
     end
 
     def compose(json_rep)
-      type     = json_rep['type']
-      provider = json_rep['provider_name'].downcase
+      type     = json_rep["type"]
+      provider = json_rep["provider_name"].downcase
 
-      if type == 'photo'
-        url    = json_rep['url']
-        width  = json_rep['width']
-        height = json_rep['height']
-        desc   = CGI::escapeHTML json_rep['description']
-        html   = "<img src=\"#{url}\" alt=\"#{desc}\" width=\"#{width}\" height=\"#{height}\" />"
+      if type    == "photo"
+        url       = json_rep["url"]
+        width     = json_rep["width"]
+        height    = json_rep["height"]
+        desc      = CGI::escapeHTML json_rep["description"]
+        html      = "<img src=\"#{url}\" alt=\"#{desc}\" width=\"#{width}\" height=\"#{height}\" />"
+      elsif type == "link"
+        url       = json_rep["url"]
+        title     = json_rep["title"]
+        html      = "<a class=\"embedly-card\" href=\"#{url}\">#{title}</a><script async src=\"//cdn.embedly.com/widgets/platform.js\" charset=\"UTF-8\"></script>"
       else
-        html = json_rep['html']
+        html = json_rep["html"]
       end
 
       "<div class=\"embed #{type} #{provider}\">#{html}</div>"
@@ -67,14 +81,16 @@ module Jekyll
     def resolve(url)
       response = Net::HTTP.get_response(URI(url))
 
-      unless response['location'].nil? and response['Location'].nil?
-        resolve URI.parse(response['location']) or
-                URI.parse(response['Location'])
+      unless response["location"].nil? and response["location"].nil?
+        resolve URI.parse(response["location"]) or
+                URI.parse(response["location"])
       else
         response.body
       end
     end
+
   end
+
 end
 
-Liquid::Template.register_tag('embedly', Jekyll::Embedly)
+Liquid::Template.register_tag("embedly", Jekyll::Embedly)
